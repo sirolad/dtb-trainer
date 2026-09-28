@@ -24,7 +24,15 @@ The health response is at `http://localhost:8787/`; the streamable HTTP endpoint
 
 ## Deployment requirements
 
-Select a user-controlled host that provides:
+The public test deployment runs on Render's free plan in Frankfurt:
+
+- Health: `https://dtb-c1-quiz.onrender.com/`
+- MCP: `https://dtb-c1-quiz.onrender.com/mcp`
+- Expected recurring cost: $0 while the service remains within Render's free-plan limits.
+
+A remote SDK smoke test has listed `start_quiz`, completed a three-question tool call, and loaded `ui://dtb-c1/quiz.html` with the `text/html;profile=mcp-app` MIME type. Render spins the free service down after inactivity, so wake-up can delay a request by 50 seconds or more. This deployment still needs MCP Inspector and live ChatGPT acceptance testing.
+
+The host provides:
 
 - Node.js 20 or newer;
 - a stable public HTTPS origin;
@@ -32,7 +40,7 @@ Select a user-controlled host that provides:
 - the platform-provided `PORT` environment variable;
 - no credentials embedded in source or manifests.
 
-Install the locked dependencies with `npm ci`, start the process, and verify both the health route and `https://<stable-host>/mcp`. Record the chosen host and its recurring cost in [the integration checklist](docs/plugin-integration-checklist.md). Do not use a temporary tunnel URL in a released plugin.
+Render installs production dependencies with `npm ci --omit=dev` and starts the process with `npm start`, as defined in `render.yaml`. Do not replace the stable deployment URL with a temporary tunnel URL in a released plugin.
 
 ## Release gate
 
@@ -59,4 +67,3 @@ The portable MCP file must use this shape only after replacing the URL with the 
 ```
 
 Official packaging and live connection guidance: [Package your plugin](https://developers.openai.com/plugins/build/plugins) and [MCP server and UI quickstart](https://developers.openai.com/plugins/build/app-quickstart).
-

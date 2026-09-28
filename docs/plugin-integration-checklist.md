@@ -16,13 +16,11 @@ Status: **prepared, not released**
 
 ## Deployment record
 
-- Host: not selected
-- Stable HTTPS MCP URL: not assigned
-- Expected recurring cost: not recorded
-- HTTP transport verification: automated locally
+- Host: Render Free web service, Frankfurt
+- Stable HTTPS MCP URL: `https://dtb-c1-quiz.onrender.com/mcp`
+- Expected recurring cost: $0 within Render's free-plan limits; the service spins down after inactivity and can take 50 seconds or more to wake.
+- HTTP transport verification: automated locally and repeated against the public endpoint; the remote SDK client listed `start_quiz`, returned three questions, and loaded the MCP Apps resource with the expected MIME type.
 - Public MCP Inspector verification: pending
-
-Do not create the release `mcp.json` while the URL is pending.
 
 ## Live ChatGPT acceptance run
 
