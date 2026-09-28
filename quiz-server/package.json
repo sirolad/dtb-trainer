@@ -4,7 +4,6 @@
   "type": "module",
   "scripts": {
     "build:ui": "node scripts/build-ui.js",
-    "prestart": "npm run build:ui",
     "start": "node src/server.js",
     "test": "npm run test:unit && npm run test:ui",
     "test:unit": "node --test test/*.test.js",

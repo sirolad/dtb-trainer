@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { createAppServer, RESOURCE_URI } from '../src/server.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { createAppServer, createHttpServer, RESOURCE_URI } from '../src/server.js';
 import { quiz, question } from './fixtures.js';
 
 async function connect() {
@@ -30,4 +31,29 @@ test('server rejects invalid quiz input with a tool error', async () => {
     const result = await client.callTool({name:'start_quiz',arguments:quiz([{...question(),correctValue:'E'}])});
     assert.equal(result.isError,true);
   } finally { await client.close(); await server.close(); }
+});
+
+test('streamable HTTP endpoint serves the tool result and MCP Apps resource', async () => {
+  const httpServer = createHttpServer();
+  await new Promise((resolve, reject) => {
+    httpServer.once('error', reject);
+    httpServer.listen(0, '127.0.0.1', resolve);
+  });
+  const address = httpServer.address();
+  const client = new Client({ name: 'quiz-http-test', version: '0.1.0' });
+  try {
+    const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${address.port}/mcp`));
+    await client.connect(transport);
+    const result = await client.callTool({
+      name: 'start_quiz',
+      arguments: quiz([question('q1'), question('q2'), question('q3')])
+    });
+    assert.equal(result.structuredContent.quiz.questions.length, 3);
+    const resource = await client.readResource({ uri: RESOURCE_URI });
+    assert.equal(resource.contents[0].mimeType, 'text/html;profile=mcp-app');
+    assert.match(resource.contents[0].text, /dtb-c1-quiz-view/);
+  } finally {
+    await client.close();
+    await new Promise(resolve => httpServer.close(resolve));
+  }
 });
