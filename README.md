@@ -30,7 +30,7 @@ The public test deployment runs on Render's free plan in Frankfurt:
 - MCP: `https://dtb-c1-quiz.onrender.com/mcp`
 - Expected recurring cost: $0 while the service remains within Render's free-plan limits.
 
-A remote SDK smoke test has listed `start_quiz`, completed a three-question tool call, and loaded `ui://dtb-c1/quiz.html` with the `text/html;profile=mcp-app` MIME type. Render spins the free service down after inactivity, so wake-up can delay a request by 50 seconds or more. This deployment still needs MCP Inspector and live ChatGPT acceptance testing.
+A remote SDK smoke test has listed `start_quiz`, completed a three-question tool call, and loaded `ui://dtb-c1/quiz.html` with the `text/html;profile=mcp-app` MIME type. MCP Inspector also connects over Streamable HTTP and lists the tool and resource. Render spins the free service down after inactivity, so wake-up can delay a request by 50 seconds or more. This deployment still needs live ChatGPT acceptance testing.
 
 The host provides:
 

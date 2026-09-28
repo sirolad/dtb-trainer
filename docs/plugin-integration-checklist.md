@@ -20,7 +20,7 @@ Status: **prepared, not released**
 - Stable HTTPS MCP URL: `https://dtb-c1-quiz.onrender.com/mcp`
 - Expected recurring cost: $0 within Render's free-plan limits; the service spins down after inactivity and can take 50 seconds or more to wake.
 - HTTP transport verification: automated locally and repeated against the public endpoint; the remote SDK client listed `start_quiz`, returned three questions, and loaded the MCP Apps resource with the expected MIME type.
-- Public MCP Inspector verification: pending
+- Public MCP Inspector verification: passed for connection, initialization, tool listing, and resource listing.
 
 ## Live ChatGPT acceptance run
 
