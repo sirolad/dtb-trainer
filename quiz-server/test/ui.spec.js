@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { question, quiz, threeQuestionQuiz } from './fixtures.js';
 
-async function mountQuiz(page, quizData) {
+async function mountQuiz(page, quizData, options = {}) {
   await page.goto('/');
-  await page.evaluate(data => {
+  await page.evaluate(({ quizData: data, sandbox }) => {
     const host = document.querySelector('#host');
     const iframe = document.createElement('iframe');
     iframe.id = 'quiz-frame';
@@ -11,6 +11,7 @@ async function mountQuiz(page, quizData) {
     iframe.style.width = '100%';
     iframe.style.border = '0';
     iframe.style.minHeight = '760px';
+    if (sandbox) iframe.setAttribute('sandbox', sandbox);
 
     window.addEventListener('message', event => {
       if (event.source !== iframe.contentWindow || !event.data) return;
@@ -37,7 +38,7 @@ async function mountQuiz(page, quizData) {
 
     host.append(iframe);
     iframe.src = '/quiz.html';
-  }, quizData);
+  }, { quizData, sandbox: options.sandbox });
 
   const frame = page.frameLocator('#quiz-frame');
   await expect(frame.getByRole('heading', { name: quizData.title })).toBeVisible();
@@ -157,4 +158,50 @@ test('a completed user can immediately start and finish a clean second run', asy
   await expect(frame.getByRole('button', { name: 'Auswertung' })).toBeDisabled();
   await answerAndAdvance(frame, 'B');
   await expect(frame.getByRole('heading', { name: 'Ergebnis: 1/1' })).toBeVisible();
+});
+
+test('runs inside an allow-scripts sandbox where browser storage is unavailable', async ({ page }) => {
+  const frame = await mountQuiz(page, quiz([question()]), { sandbox: 'allow-scripts' });
+  await answerAndAdvance(frame, 'B');
+  await expect(frame.getByRole('heading', { name: 'Ergebnis: 1/1' })).toBeVisible();
+});
+
+test('treats reserved object property names as ordinary unanswered question ids', async ({ page }) => {
+  const frame = await mountQuiz(page, quiz([question('__proto__')]));
+  const finish = frame.getByRole('button', { name: 'Auswertung' });
+  await expect(finish).toBeDisabled();
+  await answerAndAdvance(frame, 'B');
+  await expect(frame.getByRole('heading', { name: 'Ergebnis: 1/1' })).toBeVisible();
+});
+
+test('moves focus to each destination during a keyboard-only attempt and restart', async ({ page }) => {
+  const data = quiz([question()]);
+  const frame = await mountQuiz(page, data);
+  const questionHeading = frame.getByRole('heading', { name: data.questions[0].prompt });
+  await expect(questionHeading).toBeFocused();
+
+  const option = frame.getByRole('button', { name: /^B\s/ });
+  await option.focus();
+  await option.press('Enter');
+  const finish = frame.getByRole('button', { name: 'Auswertung' });
+  await finish.focus();
+  await finish.press('Enter');
+  const resultHeading = frame.getByRole('heading', { name: 'Ergebnis: 1/1' });
+  await expect(resultHeading).toBeFocused();
+
+  const restart = frame.getByRole('button', { name: 'Neu starten' });
+  await restart.focus();
+  await restart.press('Enter');
+  await expect(questionHeading).toBeFocused();
+});
+
+test('uses the original question number on a mixed-result error card', async ({ page }) => {
+  const frame = await mountQuiz(page, threeQuestionQuiz());
+  await answerAndAdvance(frame, 'B');
+  await answerAndAdvance(frame, 'C');
+  await answerAndAdvance(frame, 'A');
+
+  const error = frame.getByRole('group', { name: 'Fehler bei Frage 3: q3' });
+  await expect(error).toBeVisible();
+  await expect(error.locator('.summary-number')).toHaveText('03');
 });

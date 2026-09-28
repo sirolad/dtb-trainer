@@ -2,7 +2,6 @@ import { App, applyDocumentTheme } from '@modelcontextprotocol/ext-apps';
 import { summarizeQuiz } from './diagnosis.js';
 
 const root = document.querySelector('#app');
-const ACTIVE_ATTEMPT_KEY = 'dtb-c1-quiz-active';
 let state;
 
 function node(tag, attributes = {}, ...children) {
@@ -25,19 +24,13 @@ function modeLabel(mode) {
   return { practice: 'Übung', diagnostic: 'Schwächentest', exam: 'Prüfungsmodus' }[mode] ?? mode;
 }
 
-function quizSignature(quiz) {
-  return `${quiz.title}::${quiz.questions.map(question => question.id).join('|')}`;
-}
-
-function isReloadedAttempt(signature) {
+function isReloadedAttempt() {
   const navigation = performance.getEntriesByType('navigation')[0];
-  return navigation?.type === 'reload' && sessionStorage.getItem(ACTIVE_ATTEMPT_KEY) === signature;
+  return navigation?.type === 'reload';
 }
 
 function startAttempt(quiz, restarted = false) {
-  const signature = quizSignature(quiz);
-  state = { quiz, signature, index: 0, answers: {}, complete: false, restarted };
-  sessionStorage.setItem(ACTIVE_ATTEMPT_KEY, signature);
+  state = { quiz, index: 0, answers: Object.create(null), complete: false, restarted };
   renderQuestion();
 }
 
@@ -96,10 +89,9 @@ function selectAnswer(question, value) {
 function advanceQuestion(expectedIndex) {
   if (state.complete || state.index !== expectedIndex) return;
   const question = state.quiz.questions[state.index];
-  if (!state.answers[question.id]) return;
+  if (!Object.hasOwn(state.answers, question.id)) return;
   if (state.index === state.quiz.questions.length - 1) {
     state.complete = true;
-    sessionStorage.removeItem(ACTIVE_ATTEMPT_KEY);
     renderResults();
     return;
   }
@@ -128,7 +120,7 @@ function hintBlock(question) {
 function renderQuestion(focusValue) {
   const { quiz, index, answers, restarted } = state;
   const question = quiz.questions[index];
-  const selected = answers[question.id];
+  const selected = Object.hasOwn(answers, question.id) ? answers[question.id] : undefined;
   const feedback = quiz.mode === 'practice' && selected
     ? question.options.find(option => option.value === selected)?.feedback
     : undefined;
@@ -142,7 +134,7 @@ function renderQuestion(focusValue) {
     ),
     progressRail(quiz.questions.length, index),
     node('section', { className: 'question-card', 'aria-labelledby': 'question-prompt' },
-      node('h2', { id: 'question-prompt' }, question.prompt),
+      node('h2', { id: 'question-prompt', tabindex: '-1' }, question.prompt),
       node('div', { className: 'option-list', role: 'group', 'aria-label': 'Antwort auswählen' },
         question.options.map(option => optionButton(question, option, option.value === selected))
       ),
@@ -164,9 +156,12 @@ function renderQuestion(focusValue) {
   );
 
   root.replaceChildren(shell(main));
-  if (focusValue) {
-    requestAnimationFrame(() => root.querySelector(`.option[data-value="${focusValue}"]`)?.focus());
-  }
+  requestAnimationFrame(() => {
+    const target = focusValue
+      ? [...root.querySelectorAll('.option')].find(button => button.dataset.value === focusValue)
+      : root.querySelector('#question-prompt');
+    target?.focus();
+  });
 }
 
 function labelledValue(label, option, modifier) {
@@ -232,7 +227,7 @@ function renderResults() {
       ),
       node('div', {},
         node('p', { className: 'eyebrow' }, 'AUSWERTUNG'),
-        node('h2', { id: 'score-heading' }, `Ergebnis: ${result.score}/${result.total}`),
+        node('h2', { id: 'score-heading', tabindex: '-1' }, `Ergebnis: ${result.score}/${result.total}`),
         node('p', { className: 'score-copy' }, state.quiz.mode === 'exam'
           ? 'Die Rückmeldungen wurden bis zum Abschluss zurückgehalten.'
           : 'Ihre Auswahl wurde vollständig in dieser Oberfläche ausgewertet.')
@@ -244,7 +239,10 @@ function renderResults() {
             node('p', { className: 'eyebrow' }, 'FEHLERANALYSE'),
             node('h2', { id: 'errors-heading' }, `${result.errors.length} ${result.errors.length === 1 ? 'Fehler' : 'Fehler'} im Detail`)
           ),
-          result.errors.map(errorCard)
+          result.errors.map(error => errorCard(
+            error,
+            state.quiz.questions.findIndex(question => question.id === error.questionId)
+          ))
         )
       : node('section', { className: 'no-errors', 'aria-labelledby': 'no-errors-heading' },
           node('p', { className: 'eyebrow' }, 'DIAGNOSE'),
@@ -287,8 +285,7 @@ function receiveToolResult(params) {
     showLoadError('Die Antwort enthielt keine vollständigen Quizdaten.');
     return;
   }
-  const signature = quizSignature(quiz);
-  startAttempt(quiz, isReloadedAttempt(signature));
+  startAttempt(quiz, isReloadedAttempt());
 }
 
 const app = new App({ name: 'dtb-c1-quiz-view', version: '0.1.0' }, {}, { autoResize: true });
