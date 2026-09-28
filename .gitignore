@@ -1,0 +1,5 @@
+quiz-server/node_modules/
+.superpowers/
+test-results/
+playwright-report/
+
