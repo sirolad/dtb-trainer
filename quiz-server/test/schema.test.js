@@ -1,14 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseQuiz } from '../src/schema.js';
-
-export const question = (id = 'q1') => ({
-  id, area: 'Lesen', category: 'Schlussfolgerung', prompt: 'Was folgt?',
-  options: ['A', 'B', 'C', 'D'].map(value => ({ value, label: `Antwort ${value}`, feedback: `Erklärung ${value}` })),
-  correctValue: 'B', hint: 'Achte auf Einschränkungen.', evidenceQuote: 'kaum zu verantworten',
-  transferPrompt: 'Formuliere die Haltung neu.'
-});
-export const quiz = (questions = [question()]) => ({ title: 'C1 Test', mode: 'diagnostic', questions });
+import { question, quiz } from './fixtures.js';
 
 test('validation accepts a complete quiz', () => {
   assert.equal(parseQuiz(quiz([question('q1'), question('q2'), question('q3')])).questions.length, 3);

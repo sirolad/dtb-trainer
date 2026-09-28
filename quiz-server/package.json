@@ -3,12 +3,21 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:ui": "node scripts/build-ui.js",
+    "prestart": "npm run build:ui",
     "start": "node src/server.js",
-    "test": "node --test test/*.test.js"
+    "test": "npm run test:unit && npm run test:ui",
+    "test:unit": "node --test test/*.test.js",
+    "pretest:ui": "npm run build:ui",
+    "test:ui": "playwright test"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.0.0",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "esbuild": "^0.28.2"
   }
 }

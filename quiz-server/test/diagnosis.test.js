@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { summarizeQuiz } from '../src/diagnosis.js';
-import { question, quiz } from './schema.test.js';
+import { question, quiz } from './fixtures.js';
 
 const three = quiz([question('q1'), question('q2'), question('q3')]);
 test('scoring counts actual choices and rejects incomplete attempts', () => {
