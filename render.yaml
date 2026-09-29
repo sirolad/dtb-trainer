@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+
+services:
+  - type: web
+    runtime: node
+    name: dtb-c1-quiz
+    plan: free
+    region: frankfurt
+    branch: main
+    rootDir: quiz-server
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeployTrigger: commit

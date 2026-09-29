@@ -1,6 +1,6 @@
 # DTB C1 plugin integration checklist
 
-Status: **prepared, not released**
+Status: **live accepted and plugin version 0.1.7 published**
 
 ## Current-release baseline
 
@@ -16,30 +16,35 @@ Status: **prepared, not released**
 
 ## Deployment record
 
-- Host: not selected
-- Stable HTTPS MCP URL: not assigned
-- Expected recurring cost: not recorded
-- HTTP transport verification: automated locally
-- Public MCP Inspector verification: pending
-
-Do not create the release `mcp.json` while the URL is pending.
+- Host: Render Free web service, Frankfurt
+- Stable HTTPS MCP URL: `https://dtb-c1-quiz.onrender.com/mcp`
+- Expected recurring cost: $0 within Render's free-plan limits; the service spins down after inactivity and can take 50 seconds or more to wake.
+- HTTP transport verification: automated locally and repeated against the public endpoint; the remote SDK client listed `start_quiz`, returned three questions, and loaded the MCP Apps resource with the expected MIME type.
+- Public MCP Inspector verification: passed for connection, initialization, tool listing, and resource listing.
 
 ## Live ChatGPT acceptance run
 
 Use ChatGPT developer mode with the deployed HTTPS `/mcp` endpoint. Refresh the connection after server metadata changes.
 
-- [ ] Start one three-question diagnostic quiz from a new chat.
-- [ ] Confirm exactly one question is visible at a time with four clickable A/B/C/D choices.
-- [ ] Confirm Next is disabled before selection and a rapid double-click does not skip a question.
-- [ ] Complete all three questions with at least one wrong answer.
-- [ ] Confirm the same component shows the actual score.
-- [ ] Expand an error card and confirm selected and correct options, both explanations, category, transfer prompt, and semantic inline-code quote.
-- [ ] Confirm no more than two observations appear and a short quiz is labeled provisional.
-- [ ] Restart and complete a second attempt without inherited answers.
-- [ ] Repeat once in exam mode and confirm no correctness feedback appears before completion.
-- [ ] Save desktop and narrow-width screenshots of the live result.
+- [x] Start one three-question diagnostic quiz from a new chat.
+- [x] Confirm exactly one question is visible at a time with four clickable A/B/C/D choices.
+- [x] Confirm Next is disabled before selection and a rapid double-click does not skip a question.
+- [x] Complete all three questions with at least one wrong answer.
+- [x] Confirm the same component shows the actual score.
+- [x] Expand an error card and confirm selected and correct options, both explanations, category, transfer prompt, and semantic inline-code quote.
+- [x] Confirm no more than two observations appear and a short quiz is labeled provisional.
+- [x] Restart and confirm no answers or enabled navigation are inherited.
+- [x] Repeat once in exam mode and confirm no correctness feedback appears before completion.
+- [ ] Save a narrow-width screenshot of the live result. Desktop evidence was captured during both completed runs.
 
-Only a completed checklist permits the statement “the quiz works in ChatGPT.”
+The required live question-to-results gate has passed, so it is accurate to state that the quiz works in ChatGPT. The remaining narrow-width screenshot is release documentation evidence, not an untested behavior: phone-width layout is covered by Playwright.
+
+### Recorded live results — 2026-09-28
+
+- Learning mode: three questions completed with score `2/3`; the wrong-answer card showed the selected and correct options, both explanations, category, semantic code-formatted evidence, and a transfer task. The result included one provisional observation.
+- Restart: the same component returned to question 1 with no option selected and Next disabled.
+- Exam mode: three questions completed with score `2/3`; no correctness or explanation was shown while answering, and the final result stated that feedback was withheld until completion.
+- Render cold start observed: approximately 42 seconds on the first live request.
 
 ## Post-acceptance package delta
 
@@ -63,8 +68,12 @@ Prepare the update from the exact current release, not from a starter template.
 
 ## Release evidence
 
-- Backend plugin ID: unresolved
-- Source `current_release_id`: unresolved
-- Candidate version: `0.1.7` (gated)
-- Published release ID: none
-- New-chat verification: pending
+- Backend plugin ID: `plugin_832f3a7b4fcc8191bcf5ed8442cb5f68`
+- Source `current_release_id`: `pluginrel_6aba504a5ba48191a52aa40235c93622`
+- Published version: `0.1.7`
+- Published release ID: `pluginrel_6abbe8c96e5c819188b5fc18f3c1b83b`
+- Scope and visibility: private personal plugin (`USER`, `PRIVATE`)
+- Read-back verification: passed for both manifests, portable `mcp.json`, generated `.mcp.json`, the quiz-routing skill, and preservation of the existing reference assets
+- Direct MCP-app new-chat verification: passed in learning and exam modes
+- User verification of the integrated quiz: passed before publication
+- Published-plugin page verification: version `0.1.7`, one MCP server, and one skill visible
