@@ -158,6 +158,33 @@ test('clears lesson practice state when a learner starts a new attempt', async (
   await expect(frame.getByRole('button', { name: /^A\sLektionsantwort/ })).toHaveAttribute('aria-pressed', 'false');
 });
 
+test('keeps legacy quiz results usable without exposing a broken lesson action', async ({ page }) => {
+  const { lessons: _lessons, ...legacyQuiz } = quiz([question()]);
+  const frame = await mountQuiz(page, legacyQuiz);
+  await answerAndAdvance(frame, 'A');
+
+  await expect(frame.getByRole('heading', { name: 'Ergebnis: 0/1' })).toBeVisible();
+  const error = frame.getByRole('group', { name: 'Fehler bei Frage 1: q1' });
+  await error.locator('summary').click();
+  await expect(error.getByRole('button', { name: 'Übe Schlussfolgerung' })).toHaveCount(0);
+  await expect(error.getByText('A · Antwort A zu q1')).toBeVisible();
+});
+
+test('wraps long lesson content without horizontal overflow on a narrow viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  const category = 'Datenschutzfolgenabschätzung';
+  const data = quiz([question('q1', { category })], { lessons: [lesson(category, {
+    rule: 'Datenschutzfolgenabschätzungsergebnisdokumentation muss im Zusammenhang gelesen werden.'
+  })] });
+  const frame = await mountQuiz(page, data);
+  await answerAndAdvance(frame, 'A');
+  await openLessonFromError(frame, category);
+
+  const hasOverflow = await frame.locator('html').evaluate(element => element.scrollWidth > element.clientWidth);
+  expect(hasOverflow).toBe(false);
+  await expect(frame.getByRole('heading', { name: `Lektion: ${category}` })).toBeVisible();
+});
+
 test('renders a zero score, three error cards, and at most two provisional observations', async ({ page }) => {
   const frame = await mountQuiz(page, threeQuestionQuiz());
   await answerAndAdvance(frame, 'A');

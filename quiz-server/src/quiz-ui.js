@@ -181,6 +181,7 @@ function labelledValue(label, option, modifier) {
 }
 
 function errorCard(error, index) {
+  const lesson = state.quiz.lessons?.find(candidate => candidate.category === error.category);
   const details = node('details', { className: 'error-card', role: 'group', 'aria-label': `Fehler bei Frage ${index + 1}: ${error.questionId}` },
     node('summary', {},
       node('span', { className: 'summary-number', 'aria-hidden': 'true' }, String(index + 1).padStart(2, '0')),
@@ -203,13 +204,15 @@ function errorCard(error, index) {
         node('p', { className: 'detail-label' }, 'Mini-Transferaufgabe'),
         node('p', {}, error.transferPrompt)
       ),
-      node('div', { className: 'lesson-cta' },
-        node('button', {
-          type: 'button',
-          className: 'secondary-button lesson-button',
-          onclick: () => openLesson(error.category)
-        }, `Übe ${error.category}`)
-      )
+      lesson
+        ? node('div', { className: 'lesson-cta' },
+            node('button', {
+              type: 'button',
+              className: 'secondary-button lesson-button',
+              onclick: () => openLesson(error.category)
+            }, `Übe ${error.category}`)
+          )
+        : undefined
     )
   );
   details.addEventListener('toggle', () => {
@@ -234,7 +237,7 @@ function lessonOptionButton(lesson, option, selected) {
 
 function openLesson(category) {
   if (!state.complete) return;
-  const lesson = state.quiz.lessons.find(candidate => candidate.category === category);
+  const lesson = state.quiz.lessons?.find(candidate => candidate.category === category);
   if (!lesson) return;
   state.activeLessonCategory = category;
   renderLesson(lesson);
