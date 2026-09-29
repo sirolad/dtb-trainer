@@ -17,7 +17,7 @@ export function createAppServer() {
   }]}));
   registerAppTool(server,'start_quiz',{
     title:'Start a DTB C1 quiz',
-    description:'Render a clickable German DTB C1 quiz with its own score, error cards and weakness analysis. Supply 1-20 complete questions with answer key and individual feedback. Use for diagnostic and mini-tests.',
+    description:'Render a clickable German DTB C1 quiz with its own score, error cards, weakness analysis and category lessons. Supply 1-20 complete questions with answer keys and individual feedback, plus exactly one structured lesson for every question category. Each lesson needs a rule, two contrasting examples, a common mistake with correction, and one four-option practice question with feedback. Use for diagnostic and mini-tests.',
     inputSchema:quizSchema.shape,
     _meta:{ui:{resourceUri:RESOURCE_URI}}
   },async args=>{

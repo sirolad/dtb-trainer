@@ -30,7 +30,15 @@ function isReloadedAttempt() {
 }
 
 function startAttempt(quiz, restarted = false) {
-  state = { quiz, index: 0, answers: Object.create(null), complete: false, restarted };
+  state = {
+    quiz,
+    index: 0,
+    answers: Object.create(null),
+    lessonAnswers: Object.create(null),
+    activeLessonCategory: undefined,
+    complete: false,
+    restarted
+  };
   renderQuestion();
 }
 
@@ -194,6 +202,13 @@ function errorCard(error, index) {
       node('div', { className: 'transfer' },
         node('p', { className: 'detail-label' }, 'Mini-Transferaufgabe'),
         node('p', {}, error.transferPrompt)
+      ),
+      node('div', { className: 'lesson-cta' },
+        node('button', {
+          type: 'button',
+          className: 'secondary-button lesson-button',
+          onclick: () => openLesson(error.category)
+        }, `Übe ${error.category}`)
       )
     )
   );
@@ -202,6 +217,115 @@ function errorCard(error, index) {
     if (action) action.textContent = details.open ? 'schließen' : 'öffnen';
   });
   return details;
+}
+
+function lessonOptionButton(lesson, option, selected) {
+  return node('button', {
+    type: 'button',
+    className: `option lesson-option${selected ? ' selected' : ''}`,
+    'aria-label': `${option.value} ${option.label}`,
+    'aria-pressed': selected ? 'true' : 'false',
+    dataset: { value: option.value },
+    onclick: () => selectLessonAnswer(lesson, option.value)
+  },
+  node('span', { className: 'option-key', 'aria-hidden': 'true' }, option.value),
+  node('span', { className: 'option-label' }, option.label));
+}
+
+function openLesson(category) {
+  if (!state.complete) return;
+  const lesson = state.quiz.lessons.find(candidate => candidate.category === category);
+  if (!lesson) return;
+  state.activeLessonCategory = category;
+  renderLesson(lesson);
+}
+
+function selectLessonAnswer(lesson, value) {
+  if (!state.complete || state.activeLessonCategory !== lesson.category) return;
+  state.lessonAnswers[lesson.category] = value;
+  renderLesson(lesson, value);
+}
+
+function returnToResults() {
+  if (!state.complete) return;
+  state.activeLessonCategory = undefined;
+  renderResults();
+}
+
+function renderLesson(lesson, focusValue) {
+  const selected = Object.hasOwn(state.lessonAnswers, lesson.category)
+    ? state.lessonAnswers[lesson.category]
+    : undefined;
+  const selectedOption = selected
+    ? lesson.practice.options.find(option => option.value === selected)
+    : undefined;
+  const isCorrect = selected === lesson.practice.correctValue;
+
+  const content = node('main', { className: 'lesson-main' },
+    node('button', { type: 'button', className: 'text-button lesson-back-top', onclick: returnToResults }, '← Zurück zur Auswertung'),
+    node('section', { className: 'lesson-intro', 'aria-labelledby': 'lesson-heading' },
+      node('p', { className: 'eyebrow' }, 'GEZIELTE LEKTION'),
+      node('h2', { id: 'lesson-heading', tabindex: '-1' }, `Lektion: ${lesson.category}`),
+      node('div', { className: 'lesson-rule' },
+        node('p', { className: 'detail-label' }, 'Klare Regel'),
+        node('p', {}, lesson.rule)
+      )
+    ),
+    node('section', { className: 'lesson-section', 'aria-labelledby': 'examples-heading' },
+      node('div', { className: 'section-heading compact-heading' },
+        node('p', { className: 'eyebrow' }, 'GEGENÜBERSTELLUNG'),
+        node('h3', { id: 'examples-heading' }, 'Zwei kontrastierende Beispiele')
+      ),
+      node('div', { className: 'lesson-example-grid' }, lesson.examples.map((example, index) =>
+        node('article', { className: `lesson-example ${index === 0 ? 'example-primary' : 'example-contrast'}` },
+          node('p', { className: 'detail-label' }, example.label),
+          node('p', {}, example.text)
+        )
+      ))
+    ),
+    node('section', { className: 'lesson-mistake', 'aria-labelledby': 'mistake-heading' },
+      node('p', { className: 'eyebrow' }, 'HÄUFIGER FEHLER'),
+      node('h3', { id: 'mistake-heading' }, 'Fehler erkennen und korrigieren'),
+      node('div', { className: 'mistake-grid' },
+        node('div', { className: 'mistake-wrong' },
+          node('p', { className: 'detail-label' }, 'Typischer Fehler'),
+          node('p', {}, lesson.commonMistake.incorrect)
+        ),
+        node('div', { className: 'mistake-correct' },
+          node('p', { className: 'detail-label' }, 'Korrektur'),
+          node('p', {}, lesson.commonMistake.correction)
+        )
+      ),
+      node('p', { className: 'mistake-explanation' }, lesson.commonMistake.explanation)
+    ),
+    node('section', { className: 'lesson-practice', 'aria-labelledby': 'lesson-practice-heading' },
+      node('div', { className: 'section-heading compact-heading' },
+        node('p', { className: 'eyebrow' }, 'DIREKT ANWENDEN'),
+        node('h3', { id: 'lesson-practice-heading' }, 'Eine Übungsfrage')
+      ),
+      node('p', { className: 'lesson-practice-prompt' }, lesson.practice.prompt),
+      node('div', { className: 'option-list lesson-option-list', role: 'group', 'aria-label': `Lektionsfrage zu ${lesson.category}` },
+        lesson.practice.options.map(option => lessonOptionButton(lesson, option, option.value === selected))
+      ),
+      selectedOption
+        ? node('div', { className: `feedback lesson-feedback ${isCorrect ? 'feedback-correct' : 'feedback-wrong'}`, role: 'status', 'aria-live': 'polite' },
+            node('strong', {}, isCorrect ? 'Richtig' : 'Noch nicht'),
+            node('p', {}, selectedOption.feedback)
+          )
+        : node('div', { className: 'sr-only', 'aria-live': 'polite' }, 'Noch keine Lektionsantwort ausgewählt.')
+    ),
+    node('footer', { className: 'lesson-actions' },
+      node('button', { type: 'button', className: 'primary-button', onclick: returnToResults }, 'Zurück zur Auswertung')
+    )
+  );
+
+  root.replaceChildren(shell(content));
+  requestAnimationFrame(() => {
+    const target = focusValue
+      ? [...root.querySelectorAll('.lesson-option')].find(button => button.dataset.value === focusValue)
+      : root.querySelector('#lesson-heading');
+    target?.focus();
+  });
 }
 
 function observationCard(observation) {

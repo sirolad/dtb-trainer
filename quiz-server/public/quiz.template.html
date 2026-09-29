@@ -113,7 +113,7 @@
       font-weight: 700;
     }
     .mode-exam { color: var(--ember); }
-    .quiz-main, .results-main { display: grid; gap: 24px; padding-top: 24px; }
+    .quiz-main, .results-main, .lesson-main { display: grid; gap: 24px; padding-top: 24px; }
     .question-count { color: var(--ember); }
     .area-label { color: var(--muted); text-align: right; }
     .notice {
@@ -295,6 +295,61 @@
       white-space: normal;
     }
     .transfer p { margin: 0; line-height: 1.55; }
+    .lesson-cta { display: flex; justify-content: flex-end; padding-top: 2px; }
+    .lesson-button { color: var(--forest); border-color: var(--forest); }
+    .lesson-back-top { width: fit-content; }
+    .lesson-intro, .lesson-mistake, .lesson-practice {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: color-mix(in srgb, var(--white) 92%, transparent);
+    }
+    .lesson-intro { display: grid; gap: 16px; padding: clamp(24px, 5vw, 42px); box-shadow: var(--shadow); }
+    .lesson-intro h2 {
+      max-width: 18ch;
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2rem, 6vw, 3.8rem);
+      font-weight: 500;
+      line-height: 1.04;
+      letter-spacing: -.035em;
+      overflow-wrap: anywhere;
+    }
+    .lesson-rule {
+      display: grid;
+      gap: 8px;
+      max-width: 70ch;
+      padding: 18px 20px;
+      border-left: 5px solid var(--gold);
+      background: color-mix(in srgb, var(--gold) 14%, transparent);
+    }
+    .lesson-rule p, .lesson-example p, .lesson-mistake p { margin: 0; line-height: 1.55; }
+    .lesson-section { display: grid; gap: 14px; }
+    .compact-heading h3, .lesson-mistake h3 {
+      margin: 5px 0 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.55rem, 4vw, 2.35rem);
+      font-weight: 500;
+      letter-spacing: -.025em;
+    }
+    .lesson-example-grid, .mistake-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .lesson-example { display: grid; gap: 10px; min-height: 148px; padding: 22px; border: 1px solid var(--line); border-radius: 14px; }
+    .example-primary { background: var(--forest-soft); }
+    .example-contrast { background: var(--paper-deep); }
+    .lesson-mistake { display: grid; gap: 16px; padding: clamp(22px, 5vw, 34px); }
+    .mistake-grid > div { display: grid; gap: 8px; padding: 18px; border-radius: 12px; }
+    .mistake-wrong { background: var(--ember-soft); }
+    .mistake-correct { background: var(--forest-soft); }
+    .mistake-explanation { max-width: 70ch; color: var(--muted); }
+    .lesson-practice { display: grid; gap: 20px; padding: clamp(22px, 5vw, 34px); }
+    .lesson-practice-prompt {
+      max-width: 68ch;
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.25rem, 3.5vw, 1.75rem);
+      line-height: 1.3;
+    }
+    .lesson-feedback.feedback-wrong { border-left-color: var(--ember); background: var(--ember-soft); }
+    .lesson-actions { display: flex; justify-content: flex-end; padding-top: 4px; }
     .observation-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .observation-card { padding: 22px; box-shadow: none; }
     .observation-card h3 { margin: 7px 0 18px; font-family: Georgia, "Times New Roman", serif; font-size: 1.55rem; font-weight: 500; }
@@ -309,7 +364,7 @@
       body { background: radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--gold) 18%, transparent), transparent 28%), var(--paper); }
       .quiz-shell { padding: 18px; }
       .quiz-header { padding-bottom: 18px; }
-      .option-list, .answer-grid, .observation-grid, .score-panel { grid-template-columns: 1fr; }
+      .option-list, .answer-grid, .observation-grid, .score-panel, .lesson-example-grid, .mistake-grid { grid-template-columns: 1fr; }
       .score-panel { justify-items: start; }
       .progress-copy { align-items: flex-start; }
       .area-label { max-width: 56%; }
@@ -317,6 +372,8 @@
       .primary-button, .secondary-button { flex: 1; padding-inline: 14px; }
       .error-card summary { grid-template-columns: 34px 1fr; }
       .summary-action { display: none; }
+      .lesson-cta, .lesson-actions { justify-content: stretch; }
+      .lesson-cta .lesson-button, .lesson-actions .primary-button { width: 100%; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
