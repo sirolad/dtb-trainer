@@ -1,0 +1,26 @@
+{
+  "interface": {
+    "capabilities": [
+      "skills"
+    ],
+    "category": "Education & Research",
+    "defaultPrompt": [
+      "Starte einen schwierigen DTB-C1-Minitest.  ",
+      "Trainiere mit mir DTB C1 Schreiben.  ",
+      "Simuliere eine DTB-C1-Sprechprüfung. "
+    ],
+    "developerName": "Surajudeen Akande",
+    "displayName": "DTB C1 Prüfungstrainer",
+    "longDescription": "Strenger Prüfungstrainer für den Deutsch-Test für den Beruf C1. Trainiert Lesen, Hören, Schreiben, Sprechen, Mediation und berufsbezogene C1-Sprache mit realistischen Prüfungsaufgaben, detaillierter Fehleranalyse und persönlichem Fehlerprofil.",
+    "shortDescription": "Strenger Prüfungstrainer für den Deutsch-Test für den Beruf C1. Trainiert Lesen, Hören, Schreiben, Sprechen, Mediation und berufsbezogene C1-Sprache mit realistischen Prüfungsaufgaben, detaillierter Fehleranalyse und persönlichem Fehlerprof"
+  },
+  "name": "gpt-59b5717b0585d366ab4ff5209bf0b9d4",
+  "version": "0.1.7",
+  "description": "Strenger Prüfungstrainer für den Deutsch-Test für den Beruf C1. Trainiert Lesen, Hören, Schreiben, Sprechen, Mediation und berufsbezogene C1-Sprache mit realistischen Prüfungsaufgaben, detaillierter Fehleranalyse und persönlichem Fehlerprofil.",
+  "author": {
+    "name": "Surajudeen Akande"
+  },
+  "keywords": [],
+  "skills": "./skills",
+  "mcpServers": "./.mcp.json"
+}

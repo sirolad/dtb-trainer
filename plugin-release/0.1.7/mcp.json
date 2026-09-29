@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "dtb-c1-quiz": {
+      "type": "streamable-http",
+      "url": "https://dtb-c1-quiz.onrender.com/mcp"
+    }
+  }
+}

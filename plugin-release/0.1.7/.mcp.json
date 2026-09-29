@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "dtb-c1-quiz": {
+      "type": "streamable-http",
+      "url": "https://dtb-c1-quiz.onrender.com/mcp",
+      "headers": {}
+    }
+  }
+}
