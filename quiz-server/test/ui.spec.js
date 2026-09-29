@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { question, quiz, threeQuestionQuiz } from './fixtures.js';
+import { lesson, question, quiz, threeQuestionQuiz } from './fixtures.js';
 
 async function mountQuiz(page, quizData, options = {}) {
   await page.goto('/');
@@ -54,6 +54,12 @@ async function answerAndAdvance(frame, value) {
   await frame.getByRole('button', { name: /Weiter|Auswertung/ }).click();
 }
 
+async function openLessonFromError(frame, category, questionId = 'q1') {
+  const error = frame.getByRole('group', { name: `Fehler bei Frage 1: ${questionId}` });
+  await error.locator('summary').click();
+  await error.getByRole('button', { name: `Übe ${category}` }).click();
+}
+
 test('moves through three questions without unanswered skips or double-counting', async ({ page }) => {
   const frame = await mountQuiz(page, threeQuestionQuiz());
   const next = frame.getByRole('button', { name: 'Weiter' });
@@ -78,9 +84,105 @@ test('shows practice feedback but suppresses exam feedback until completion', as
   const exam = await mountQuiz(page, quiz([question()], { mode: 'exam' }));
   await answer(exam, 'A');
   await expect(exam.getByText('Erklärung A zu q1')).not.toBeVisible();
+  await expect(exam.getByRole('button', { name: 'Übe Schlussfolgerung' })).toHaveCount(0);
   await exam.getByRole('button', { name: 'Auswertung' }).click();
   await exam.getByRole('group', { name: /Fehler bei Frage 1/ }).locator('summary').click();
+  await expect(exam.getByRole('button', { name: 'Übe Schlussfolgerung' })).toBeVisible();
   await expect(exam.getByText('Erklärung A zu q1')).toBeVisible();
+});
+
+test('keeps quiz results intact through lesson practice and return', async ({ page }) => {
+  const frame = await mountQuiz(page, quiz([question()]));
+  await answerAndAdvance(frame, 'A');
+  await expect(frame.getByRole('heading', { name: 'Ergebnis: 0/1' })).toBeVisible();
+
+  await openLessonFromError(frame, 'Schlussfolgerung');
+  const lessonHeading = frame.getByRole('heading', { name: 'Lektion: Schlussfolgerung' });
+  await expect(lessonHeading).toBeFocused();
+  await expect(frame.getByText('Bei Schlussfolgerung zählt die Aussage des gesamten Zusammenhangs, nicht nur ein einzelnes Schlüsselwort.')).toBeVisible();
+  await expect(frame.getByText('Obwohl die Frist knapp ist, bleibt der Termin bestehen.')).toBeVisible();
+  await expect(frame.getByText('Weil die Frist knapp ist, wird der Termin verschoben.')).toBeVisible();
+  await expect(frame.getByText('Ein bekanntes Wort reicht als Begründung für die Antwort.')).toBeVisible();
+  await expect(frame.getByText('Prüfen Sie, welche logische Beziehung der ganze Satz ausdrückt.')).toBeVisible();
+
+  await frame.getByRole('button', { name: /^A\sLektionsantwort/ }).click();
+  await expect(frame.getByText('Noch nicht: Antwort A übersieht den Zusammenhang.')).toBeVisible();
+
+  await frame.getByRole('button', { name: 'Zurück zur Auswertung', exact: true }).click();
+  await expect(frame.getByRole('heading', { name: 'Ergebnis: 0/1' })).toBeFocused();
+  const error = frame.getByRole('group', { name: 'Fehler bei Frage 1: q1' });
+  await expect(error).toBeVisible();
+  await error.locator('summary').click();
+  await expect(error.getByText('A · Antwort A zu q1')).toBeVisible();
+  await expect(error.getByText('B · Antwort B zu q1')).toBeVisible();
+});
+
+test('renders lesson-generated text literally and never changes the quiz score', async ({ page }) => {
+  const unsafe = '<img src=x onerror="window.__lessonXss=true">';
+  const data = quiz([question()], { lessons: [lesson('Schlussfolgerung', {
+    rule: unsafe,
+    examples: [
+      { label: '<script>window.__lessonXss=true</script>', text: unsafe },
+      { label: 'Kontrast', text: '<b>Nur Text</b>' }
+    ],
+    commonMistake: { incorrect: unsafe, correction: '<i>Korrektur</i>', explanation: '<svg onload="window.__lessonXss=true"></svg>' },
+    practice: {
+      ...lesson().practice,
+      prompt: '<script>window.__lessonXss=true</script>',
+      options: lesson().practice.options.map(option => ({ ...option, label: `${option.value} ${unsafe}`, feedback: `${option.feedback} ${unsafe}` }))
+    }
+  })] });
+  const frame = await mountQuiz(page, data);
+  await answerAndAdvance(frame, 'A');
+  await openLessonFromError(frame, 'Schlussfolgerung');
+  await expect(frame.getByText(unsafe, { exact: true }).first()).toBeVisible();
+  expect(await frame.locator('script').count()).toBe(1);
+  expect(await frame.locator('body').evaluate(() => window.__lessonXss)).toBeUndefined();
+  await frame.getByRole('button', { name: /^C\s/ }).click();
+  await frame.getByRole('button', { name: 'Zurück zur Auswertung', exact: true }).click();
+  await expect(frame.getByRole('heading', { name: 'Ergebnis: 0/1' })).toBeVisible();
+});
+
+test('clears lesson practice state when a learner starts a new attempt', async ({ page }) => {
+  const frame = await mountQuiz(page, quiz([question()]));
+  await answerAndAdvance(frame, 'A');
+  await openLessonFromError(frame, 'Schlussfolgerung');
+  await frame.getByRole('button', { name: /^A\sLektionsantwort/ }).click();
+  await expect(frame.getByText('Noch nicht: Antwort A übersieht den Zusammenhang.')).toBeVisible();
+  await frame.getByRole('button', { name: 'Zurück zur Auswertung', exact: true }).click();
+
+  await frame.getByRole('button', { name: 'Neu starten' }).click();
+  await answerAndAdvance(frame, 'A');
+  await openLessonFromError(frame, 'Schlussfolgerung');
+  await expect(frame.getByText('Noch nicht: Antwort A übersieht den Zusammenhang.')).toHaveCount(0);
+  await expect(frame.getByRole('button', { name: /^A\sLektionsantwort/ })).toHaveAttribute('aria-pressed', 'false');
+});
+
+test('keeps legacy quiz results usable without exposing a broken lesson action', async ({ page }) => {
+  const { lessons: _lessons, ...legacyQuiz } = quiz([question()]);
+  const frame = await mountQuiz(page, legacyQuiz);
+  await answerAndAdvance(frame, 'A');
+
+  await expect(frame.getByRole('heading', { name: 'Ergebnis: 0/1' })).toBeVisible();
+  const error = frame.getByRole('group', { name: 'Fehler bei Frage 1: q1' });
+  await error.locator('summary').click();
+  await expect(error.getByRole('button', { name: 'Übe Schlussfolgerung' })).toHaveCount(0);
+  await expect(error.getByText('A · Antwort A zu q1')).toBeVisible();
+});
+
+test('wraps long lesson content without horizontal overflow on a narrow viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  const category = 'Datenschutzfolgenabschätzung';
+  const data = quiz([question('q1', { category })], { lessons: [lesson(category, {
+    rule: 'Datenschutzfolgenabschätzungsergebnisdokumentation muss im Zusammenhang gelesen werden.'
+  })] });
+  const frame = await mountQuiz(page, data);
+  await answerAndAdvance(frame, 'A');
+  await openLessonFromError(frame, category);
+
+  const hasOverflow = await frame.locator('html').evaluate(element => element.scrollWidth > element.clientWidth);
+  expect(hasOverflow).toBe(false);
+  await expect(frame.getByRole('heading', { name: `Lektion: ${category}` })).toBeVisible();
 });
 
 test('renders a zero score, three error cards, and at most two provisional observations', async ({ page }) => {

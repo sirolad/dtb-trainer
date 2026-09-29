@@ -18,9 +18,12 @@ test('server returns validated quiz and UI resource metadata', async () => {
   try {
     const result = await client.callTool({name:'start_quiz',arguments:quiz([question('q1'),question('q2'),question('q3')])});
     assert.equal(result.structuredContent.quiz.questions.length,3);
+    assert.equal(result.structuredContent.quiz.lessons.length,1);
     assert.equal(result._meta.ui.resourceUri,RESOURCE_URI);
     assert.ok(result.content[0].text.includes('3 Fragen'));
     assert.ok(!result.content[0].text.includes('Antwort B'));
+    const tools = await client.listTools();
+    assert.match(tools.tools.find(tool => tool.name === 'start_quiz').description, /lesson|Lektion/i);
     const resource = await client.readResource({uri:RESOURCE_URI});
     assert.equal(resource.contents[0].mimeType,'text/html;profile=mcp-app');
   } finally { await client.close(); await server.close(); }
